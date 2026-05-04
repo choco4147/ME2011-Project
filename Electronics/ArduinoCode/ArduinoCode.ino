@@ -45,7 +45,7 @@ void loop() {
   
   // state functions
   pad(maxServo);
-  flying(asl,maxServo,maxSpeed);
+  maxA = flying(asl,maxServo,maxSpeed);
   landed(round(maxS),round(maxA));
 }
 
@@ -84,11 +84,11 @@ float getA() {
   return bmp.readAltitude(1013.25) / 3.281;
   }
   else {
-    if(t<13000){ // flight
-      return (sq(t-10800)/-33000)+3800;
+    if(t<9100){ // flight
+      return 0.4*t;
     }
-    if(13000<t && t<25600){ // parachute
-      return 0.28*((t*-1)+13000)+3662;
+    if(9100<t && t<25600){ // parachute
+      return -0.212*(t-9100)+3640;
     }
     if(25600<t) { // ground
       return 136;
@@ -203,7 +203,7 @@ void pad(int maxServo) {
 
 
 // code for when the rocket is flying in the air
-void flying(float asl, int maxServo, int maxSpeed) {
+float flying(float asl, int maxServo, int maxSpeed) {
   // defining variables
   bool flying = true;
   float maxA = 0;
@@ -226,16 +226,21 @@ void flying(float asl, int maxServo, int maxSpeed) {
     // servo code - currently set to get constant acceleration
     // based on assumption that force of drag scales with v^2
     if(getIAS()>0){
-      srv.write(maxServo);
+      digitalWrite(13,HIGH);
+      srv.write(maxServo*getIAS()/maxSpeed);
       Serial.println("flying");
+      Serial.println(maxServo*getIAS()/maxSpeed);
     }
     else{
-      srv.write(maxServo*0.5);
+      digitalWrite(13,LOW);
+      srv.write(0.3*abs(maxServo*sin(millis()/150)));
+    Serial.println(abs(maxServo*sin(millis()/50)));
       Serial.println("descending");
     }
     pA = getA();
     delay(50);
   }
+  return maxA;
 }
 
 
@@ -248,6 +253,47 @@ void flying(float asl, int maxServo, int maxSpeed) {
 // code for when the rocket has landed on the ground
 void landed(int maxS, int maxA){
   srv.write(0);
+  int temp = maxA;
+  int thou = 0;
+  int hund = 0;
+  int ten = 0;
+  int one = 0;
+  // change max alt into thous, hunds, tens, ones
+  while(temp - 1000 >= 0) {temp = temp-1000;thou = thou+1;}
+  while(temp-100>=0){temp=temp-100;hund=hund+1;}
+  while(temp-10>=0){temp=temp-10;ten=ten+1;}
+  while(temp-1>=0){temp=temp-1;one=one+1;}
+  Serial.println(maxA);
+  for(int i = 0; i < 3; i=i+1){
+    for (int j=0;j<thou;j=j+1){
+      digitalWrite(13,HIGH);
+      delay(200);
+      digitalWrite(13,LOW);
+      delay(200);
+    }
+    delay(1000);
+    for (int j=0;j<hund;j=j+1){
+      digitalWrite(13,HIGH);
+      delay(200);
+      digitalWrite(13,LOW);
+      delay(200);
+    }
+    delay(1000);
+    for (int j=0;j<ten;j=j+1){
+      digitalWrite(13,HIGH);
+      delay(200);
+      digitalWrite(13,LOW);
+      delay(200);
+    }
+    delay(1000);
+    for (int j=0;j<one;j=j+1){
+      digitalWrite(13,HIGH);
+      delay(200);
+      digitalWrite(13,LOW);
+      delay(200);
+    }
+    delay(3500);
+  }
   
   while(1==1){
     Serial.print("landed!");
